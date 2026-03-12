@@ -1,0 +1,540 @@
+@font-face {
+    font-family: alan-sans;
+    src: url(src/font/AlanSans-Regular.ttf);
+}
+
+@font-face {
+    font-family: alan-sans-light;
+    src: url(src/font/AlanSans-Light.ttf);
+}
+
+@font-face {
+    font-family: alan-sans-bold;
+    src: url(src/font/AlanSans-SemiBold.ttf);
+}
+
+@font-face {
+    font-family: alan-sans-black;
+    src: url(src/font/AlanSans-Black.ttf);
+}
+
+/* FARBEN */
+:root {
+    --blau: #1877F2;
+    /* Haupt akzentfarbe */
+    --blau-dunkel: #1560c8;
+    /* Hover zustand Buttons */
+    --grau-hell: #f0f2f5;
+    /* Zweitfarbe */
+    --grau-text: #65676b;
+    /* zweite Textfarbe */
+    --rand: #dddfe2;
+    /* Rahmenfarbe */
+    --weiss: #fff;
+    /* Karten und Feldhintergrund */
+    --schwarz: #1c1e21;
+    /* Haupttextfarbe */
+}
+
+
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: alan-sans, sans-serif;
+    background: var(--grau-hell);
+    min-height: 100vh;
+    display: flex;
+}
+
+
+/* SEITENLEISTE */
+.sidebar {
+    width: 300px;
+    background: var(--weiss);
+    border-right: 1px solid var(--rand);
+    padding: 48px 32px;
+    text-align: center;
+
+    /* Sidebar bleibt beim Scrollen stehen */
+    position: sticky;
+    top: 0;
+    height: 100vh;
+}
+
+.sitbarlayout {
+    font-family: alan-sans-black, sans-serif;
+    font-size: 15px;
+    color: var(--grau-text);
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+/* Haupttitel der Umfrage */
+.sidebar-titel {
+    font-family: alan-sans-black, sans-serif;
+    font-size: 24px;
+    color: var(--schwarz);
+    line-height: 1.3;
+    margin-bottom: 14px;
+    margin-top: 12px;
+}
+
+/* Beschreibungstext darunter */
+.sidebar-text {
+    font-family: alan-sans-light, sans-serif;
+    font-size: 14px;
+    color: var(--grau-text);
+    line-height: 1.6;
+}
+
+
+/* HAUPTBEREICH */
+.main {
+    flex: 1;
+    /* Nimmt den restlichen Platz neben der Sidebar ein */
+    display: flex;
+    justify-content: center;
+    /* Karte horizontal zentrieren */
+    padding: 60px 40px;
+}
+
+/* Weisse Karte, in der das Formular sitzt */
+.card {
+    background: var(--weiss);
+    border-radius: 16px;
+    border: 1px solid var(--rand);
+    padding: 52px 56px;
+    max-width: 600px;
+    width: 100%;
+
+    /* Schatten damit die Karte leicht schwebt */
+    box-shadow: 0 2px 12px rgba(0, 0, 0, .06);
+
+    /* Flex-Spalte mit gleichmässigem Abstand zwischen Elementen */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+
+/*  FRAGETITEL*/
+.titel_umfrage {
+    font-family: alan-sans-bold, sans-serif;
+    font-size: 17px;
+    color: var(--schwarz);
+    margin-top: 4px;
+    margin-bottom: 6px;
+}
+
+
+/* TRENNLINIE zwischen den Fragen */
+hr {
+    border: none;
+    border-top: 1px solid var(--rand);
+    margin: 10px 0;
+}
+
+
+/* RADIO & CHECKBOX  als klickbare Karte */
+.option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 14px;
+    border-radius: 8px;
+    border: 1.5px solid var(--rand);
+    cursor: pointer;
+    font-size: 15px;
+    color: var(--schwarz);
+
+    /* Sanfter Übergang beim Hover und beim Auswählen */
+    transition: border-color .15s, background .15s;
+}
+
+/* Hover-Zustand: Rahmen wird blau, Hintergrund leicht blau */
+.option:hover {
+    border-color: var(--blau);
+    background: #f0f5ff;
+}
+
+.option:has(input:checked) {
+    border-color: var(--blau);
+    background: #eef3fd;
+}
+
+/* Radio und Checkbox-Element vergrößern */
+.option input[type="radio"],
+.option input[type="checkbox"] {
+    width: 17px;
+    height: 17px;
+    accent-color: var(--blau);
+
+    /* Farbe des häkchen und Punktes */
+    cursor: pointer;
+    /* Verhindert Verkleinerung bei wenig Platz */
+    flex-shrink: 0;
+}
+
+
+
+.feld-label {
+    font-family: alan-sans, sans-serif;
+    font-size: 13px;
+    color: var(--grau-text);
+    margin-bottom: -4px;
+}
+
+
+/* TEXT-FELDER
+für: text, email, password, number,
+tel, url, search, date, time */
+
+.feld {
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 8px;
+    border: 1.5px solid var(--rand);
+    font-family: alan-sans, sans-serif;
+    font-size: 15px;
+    color: var(--schwarz);
+    background: var(--weiss);
+    outline: none;
+    transition: border-color .15s;
+}
+
+/* Hover Blaue akzente */
+.feld:focus {
+    border-color: var(--blau);
+}
+
+/* Platzhaltertext */
+.feld::placeholder {
+    color: var(--grau-text);
+}
+
+/* kalender und uhrzeit blaue akztenfarbe im popup menü */
+input[type="date"],
+input[type="time"] {
+    accent-color: var(--blau);
+}
+
+
+/* Farbauswahl  */
+.feld-color {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    border: 1.5px solid var(--rand);
+    padding: 2px;
+    cursor: pointer;
+    background: none;
+}
+
+
+
+/* Schieberegler */
+
+.feld-range {
+    -webkit-appearance: none;
+    /* Standard-Style des Browsers entfernen */
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 99px;
+    background: var(--rand);
+    /* Schiene in Grau */
+    outline: none;
+    cursor: pointer;
+    accent-color: var(--blau);
+}
+
+.feld-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--weiss);
+    border: 2px solid var(--blau);
+    box-shadow: 0 1px 6px rgba(24, 119, 242, .35);
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+}
+
+.feld-range::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 2px 10px rgba(24, 119, 242, .5);
+}
+
+.feld-range::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--weiss);
+    border: 2px solid var(--blau);
+    cursor: pointer;
+}
+
+
+/*  Datei-Upload */
+.feld-file {
+    font-family: alan-sans, sans-serif;
+    font-size: 14px;
+    color: var(--schwarz);
+    cursor: pointer;
+}
+
+/* datei select */
+.feld-file::file-selector-button {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1.5px solid var(--rand);
+    background: var(--grau-hell);
+    font-family: alan-sans, sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    margin-right: 10px;
+    transition: background .15s;
+}
+
+.feld-file::file-selector-button:hover {
+    background: var(--rand);
+}
+
+
+/* IMAGE  Bild als Submit-Button */
+.feld-image {
+    display: block;
+    max-width: 100%;
+    height: 60px;
+    object-fit: cover;
+    cursor: pointer;
+    border: 2px solid var(--rand);
+    border-radius: 10px;
+    transition: border-color .15s, box-shadow .15s;
+}
+
+.feld-image:hover {
+    border-color: var(--blau);
+    box-shadow: 0 4px 14px rgba(24, 119, 242, .2);
+}
+
+
+/*  (Reset + Submit)*/
+.button-zeile {
+    display: flex;
+    gap: 12px;
+    margin-top: 6px;
+}
+
+/* Submit-Button  gefüllt in Blau */
+.btn-absenden {
+    padding: 12px 28px;
+    border-radius: 99px;
+    /* Vollständig runde Seiten */
+    border: none;
+    background: var(--blau);
+    color: var(--weiss);
+    font-family: alan-sans-bold, sans-serif;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(24, 119, 242, .3);
+    transition: background .15s;
+}
+
+.btn-absenden:hover {
+    background: var(--blau-dunkel);
+}
+
+/* Reset-Button  umrandet kein Hintergrund */
+.btn-zurueck {
+    padding: 13px 28px;
+    border-radius: 99px;
+    border: 1.5px solid var(--rand);
+    background: var(--grau-hell);
+    color: var(--schwarz);
+    font-family: alan-sans, sans-serif;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background .15s;
+}
+
+.btn-zurueck:hover {
+    background: var(--rand);
+}
+
+
+/* ICONS */
+/* Navigation Icons - Icons in der Sidebar */
+.nav-icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    vertical-align: middle;
+    stroke: var(--grau-text);
+    flex-shrink: 0;
+}
+
+/* Navigation Active - Aktive Seite in der Sidebar */
+.nav-active {
+    color: var(--blau);
+    font-weight: 500;
+}
+
+.nav-active .nav-icon {
+    stroke: var(--blau);
+}
+
+/* Button Icons - Icons vor Button-Text */
+.btn-icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+    vertical-align: middle;
+    stroke: var(--schwarz);
+}
+
+/* Section Icons - Icons vor Sektionstiteln */
+.section-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 8px;
+    vertical-align: middle;
+    stroke: var(--schwarz);
+}
+
+/* Delete Button - Lösch-Button */
+.btn-delete {
+    padding: 12px 28px;
+    border-radius: 99px;
+    border: 1.5px solid #dc3545;
+    background: var(--weiss);
+    color: #dc3545;
+    font-family: alan-sans, sans-serif;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background .15s;
+}
+
+.btn-delete:hover {
+    background: #fff5f5;
+}
+
+
+@media (max-width: 700px) {
+    body {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+        padding: 24px 20px;
+    }
+
+    .main {
+        padding: 20px 16px;
+    }
+
+    .card {
+        padding: 28px 20px;
+    }
+}
+
+.admin-text {
+    font-family: alan-sans-black, sans-serif;
+    color: black;
+    font-size: 50px;
+    line-height: 1.3;
+    margin-bottom: 14px;
+    margin-top: 12px;
+    margin: 0 auto;
+}
+
+.btn-delete-klein {
+    border: 1.5px solid #dc3545;
+    border-radius: 12px;
+    background: var(--weiss);
+    color: #dc3545;
+    font-size: 15px;
+    padding: 8px 14px;
+    margin-left: 16px;
+    cursor: pointer;
+    transition: background .15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-delete-klein:hover {
+    background: #fff5f5;
+}
+
+/* 2-Spalten Layout für create.html */
+.main:has(.preview-card) {
+    flex-wrap: wrap;
+    gap: 30px;
+    align-items: flex-start;
+}
+
+.card + .preview-card {
+    flex: 1;
+    min-width: 300px;
+}
+
+.preview-card {
+    position: sticky;
+    top: 0;
+    height: fit-content;
+}
+
+.preview-frage {
+    margin-bottom: 20px;
+}
+
+.preview-frage-text {
+    font-family: alan-sans-bold, sans-serif;
+    font-size: 16px;
+    color: var(--schwarz);
+    margin-bottom: 10px;
+}
+
+.preview-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1.5px solid var(--rand);
+    cursor: pointer;
+    font-size: 15px;
+    color: var(--schwarz);
+}
+
+/* Fehler-Styles für Validierung */
+.feld.error {
+    border-color: #dc3545;
+    background: #fff5f5;
+}
+
+.feld.error:focus {
+    border-color: #dc3545;
+}
+
+.error-message {
+    color: #dc3545;
+    font-size: 13px;
+    margin-top: 4px;
+    display: none;
+}
+
+.feld.error + .error-message,
+.feld-error-wrapper .error-message {
+    display: block;
+}

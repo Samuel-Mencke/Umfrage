@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="utf-8">
+    <title>Admin - Neue Umfrage</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+
+    <!-- SEITENLEISTE -->
+    <div class="sidebar">
+
+        <div class="titel-sidebar">
+            <span class="sitbarlayout">Admin</span>
+        </div>
+
+        <h1 class="sidebar-titel">Neue Umfrage</h1>
+
+        <div style="margin-top: 30px;">
+            <a href="index.php"
+                style="display: flex; align-items: center; padding: 8px 0; color: var(--schwarz); text-decoration: none; font-size: 15px;">
+                <img src="../src/icons/dashboard.svg" class="nav-icon" alt="">
+                Dashboard
+            </a>
+            <a href="umfragen.html"
+                style="display: flex; align-items: center; padding: 8px 0; color: var(--schwarz); text-decoration: none; font-size: 15px;">
+                <img src="../src/icons/surveys.svg" class="nav-icon" alt="">
+                Umfragen
+            </a>
+            <a href="create.html" class="nav-active"
+                style="display: flex; align-items: center; padding: 8px 0; color: var(--schwarz); text-decoration: none; font-size: 15px;">
+                <img src="../src/icons/add.svg" class="nav-icon" alt="">
+                Neue Umfrage
+            </a>
+            <button onclick="logout()" style="background: none; border: none; padding: 8px 0; cursor: pointer; text-align: left; font-size: 15px; color: #dc3545; margin-top: 20px; width: 100%;">
+                Abmelden
+            </button>
+        </div>
+
+    </div>
+
+    <!-- HAUPTBEREICH -->
+    <div class="main">
+
+        <form class="card" style="max-width: 600px;">
+
+            <h2 class="titel_umfrage">Neue Umfrage erstellen</h2>
+            <p class="sidebar-text">Erstelle in 3 einfachen Schritten deine Umfrage</p>
+            <hr>
+
+            <!-- SCHRITT 1: Umfrage-Infos -->
+            <h3 class="titel_umfrage">Schritt 1: Grundlagen</h3>
+
+            <label class="feld-label">Titel der Umfrage</label>
+            <input class="feld" type="text" placeholder="Titel" aria-label="Titel der Umfrage">
+
+            <label class="feld-label">Beschreibung</label>
+            <input class="feld" type="text" placeholder="Kurze Beschreibung der Frage"
+                aria-label="Beschreibung der Umfrage">
+
+            <hr>
+
+            <!-- SCHRITT 2: Fragen -->
+            <h3 class="titel_umfrage">Schritt 2: Fragen</h3>
+
+            <!-- FRAGE 1 -->
+            <div class="frage-block" id="frage-1"
+                style="padding: 20px; border-radius: 12px; border: 1.5px solid var(--rand); background: var(--grau-hell); margin-bottom: 16px;">
+
+                <h4 class="sidebar-titel" style="font-size: 16px; margin-bottom: 12px;">Frage 1</h4>
+
+                <label class="feld-label">Was möchtest du fragen?</label>
+                <input class="feld" type="text" placeholder="Frage" aria-label="Frage 2">
+
+                <label class="feld-label">Antworttyp</label>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 12px;">
+                    <label class="option" for="type1-radio">
+                        <input type="radio" id="type1-radio" name="type1" class="type-radio" checked>
+                        Nur eine Antwort
+                    </label>
+                    <label class="option" for="type1-check">
+                        <input type="radio" id="type1-check" name="type1" class="type-checkbox">
+                        Mehrere Antworten
+                    </label>
+                    <label class="option" for="type1-text">
+                        <input type="radio" id="type1-text" name="type1" class="type-text">
+                        Texteingabe
+                    </label>
+                    <label class="option" for="type1-number">
+                        <input type="radio" id="type1-number" name="type1" class="type-number">
+                        Zahl
+                    </label>
+                    <label class="option" for="type1-date">
+                        <input type="radio" id="type1-date" name="type1" class="type-date">
+                        Datum
+                    </label>
+                    <label class="option" for="type1-email">
+                        <input type="radio" id="type1-email" name="type1" class="type-email">
+                        E-Mail
+                    </label>
+                    <label class="option" for="type1-range">
+                        <input type="radio" id="type1-range" name="type1" class="type-range">
+                        Bewertung (1-5)
+                    </label>
+                </div>
+
+                <label class="feld-label">Antwortmöglichkeiten</label>
+                <div class="antworten-liste">
+                    <div>
+                        <label class="option">
+                            <input type="radio" name="opt-1" disabled aria-label="Antwortmöglichkeit 1">
+                            <input class="feld" type="text" placeholder="Antwortmöglichkeit 1"
+                                style="border: none; background: transparent; padding: 0;">
+                            <button class="btn-delete-klein" type="button"
+                                onclick="deleteElement(this.closest('div'), this.closest('.antworten-liste'))"><img
+                                    src="../src/icons/delete.svg" style="width: 16px; height: 16px;"></button>
+                        </label>
+                    </div>
+                    <div>
+                        <label class="option">
+                            <input type="radio" name="opt-1" disabled aria-label="Antwortmöglichkeit 2">
+                            <input class="feld" type="text" placeholder="Antwortmöglichkeit 2"
+                                style="border: none; background: transparent; padding: 0;">
+                            <button class="btn-delete-klein" type="button"
+                                onclick="deleteElement(this.closest('div'), this.closest('.antworten-liste'))"><img
+                                    src="../src/icons/delete.svg" style="width: 16px; height: 16px;"></button>
+                        </label>
+                    </div>
+                </div>
+
+                <input class="btn-zurueck btn-add-antwort" type="button" value="+ Antwort hinzufügen"
+                    style="margin-top: 8px;">
+
+            </div>
+
+            <!-- FRAGE 2 -->
+            <div class="frage-block" id="frage-2"
+                style="padding: 20px; border-radius: 12px; border: 1.5px solid var(--rand); background: var(--grau-hell); margin-bottom: 16px;">
+
+                <h4 class="sidebar-titel" style="font-size: 16px; margin-bottom: 12px;">Frage 2</h4>
+
+                <label class="feld-label">Was möchtest du fragen?</label>
+                <input class="feld" type="text" placeholder="Frage" aria-label="Frage 2">
+
+                <label class="feld-label">Antworttyp</label>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 12px;">
+                    <label class="option" for="type2-radio">
+                        <input type="radio" id="type2-radio" name="type2" class="type-radio">
+                        Nur eine Antwort
+                    </label>
+                    <label class="option" for="type2-check">
+                        <input type="radio" id="type2-check" name="type2" class="type-checkbox" checked>
+                        Mehrere Antworten
+                    </label>
+                    <label class="option" for="type2-text">
+                        <input type="radio" id="type2-text" name="type2" class="type-text">
+                        Texteingabe
+                    </label>
+                    <label class="option" for="type2-number">
+                        <input type="radio" id="type2-number" name="type2" class="type-number">
+                        Zahl
+                    </label>
+                    <label class="option" for="type2-date">
+                        <input type="radio" id="type2-date" name="type2" class="type-date">
+                        Datum
+                    </label>
+                    <label class="option" for="type2-email">
+                        <input type="radio" id="type2-email" name="type2" class="type-email">
+                        E-Mail
+                    </label>
+                    <label class="option" for="type2-range">
+                        <input type="radio" id="type2-range" name="type2" class="type-range">
+                        Bewertung (1-5)
+                    </label>
+                </div>
+
+                <label class="feld-label">Antwortmöglichkeiten</label>
+                <div class="antworten-liste">
+                    <div>
+                        <label class="option">
+                            <input type="checkbox" name="opt-2" disabled aria-label="Antwortmöglichkeit 1">
+                            <input class="feld" type="text" placeholder="Antwortmöglichkeit 1"
+                                style="border: none; background: transparent; padding: 0;">
+                            <button class="btn-delete-klein" type="button"
+                                onclick="deleteElement(this.closest('div'), this.closest('.antworten-liste'))"><img
+                                    src="../src/icons/delete.svg" style="width: 16px; height: 16px;"></button>
+                        </label>
+                    </div>
+                    <div>
+                        <label class="option">
+                            <input type="checkbox" name="opt-2" disabled aria-label="Antwortmöglichkeit 2">
+                            <input class="feld" type="text" placeholder="Antwortmöglichkeit 2"
+                                style="border: none; background: transparent; padding: 0;">
+                            <button class="btn-delete-klein" type="button"
+                                onclick="deleteElement(this.closest('div'), this.closest('.antworten-liste'))"><img
+                                    src="../src/icons/delete.svg" style="width: 16px; height: 16px;"></button>
+                        </label>
+                    </div>
+                </div>
+
+                <input class="btn-zurueck btn-add-antwort" type="button" value="+ Antwort hinzufügen"
+                    style="margin-top: 8px;">
+
+            </div>
+
+            <!-- Neue Frage hinzufügen -->
+            <input class="btn-zurueck btn-add-frage" type="button" value="+ Neue Frage hinzufügen"
+                style="width: 100%; margin-bottom: 16px;">
+
+            <hr>
+
+            <!-- SCHRITT 3: Speichern -->
+            <h3 class="titel_umfrage">Schritt 3: Fertigstellen</h3>
+
+            <div class="button-zeile">
+                <input class="btn-zurueck" type="reset" value="Abbrechen" aria-label="Umfrage abbrechen">
+                <input class="btn-absenden" type="submit" value="Umfrage speichern" aria-label="Umfrage speichern">
+            </div>
+
+            <input type="hidden" name="surveyData" id="surveyData">
+
+        </form>
+
+        <div class="card preview-card">
+            <h2 class="titel_umfrage">Live-Vorschau</h2>
+            <p class="sidebar-text">So sieht deine Umfrage aus</p>
+            <hr>
+            <div id="preview-content">
+                <p class="sidebar-text">Noch keine Daten...</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        checkAuth();
+    </script>
+    <script src="../script.js"></script>
+</body>
+
+</html>

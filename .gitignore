@@ -1,0 +1,23 @@
+# Environment und Credentials
+.env
+.env.local
+.env.*.local
+
+# Konfigurationsdateien mit Credentials
+config.php
+.htpasswd
+
+# VS Code Konfiguration mit Credentials
+.vscode/
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
