@@ -1,15 +1,15 @@
 # Umfrage Tool
 
-[Projekt Übersicht](src/screenshots/umfrage.png)
+![Projekt Übersicht](src/screenshots/umfrage.png)
 
 
 ## Projektbeschreibung
 
 Ein webbasiertes Umfrage Tool zur Erstellung und Durchführung von Umfragen. Benutzer können Umfragen erstellen verwalten und öffentlich zur Verfügung stellen.
 
-[Screenshot](src/screenshots/Admin-umfragen-overview.png)
+![Screenshot](src/screenshots/Admin-umfragen-overview.png)
 
-[Admin erstellen](src/screenshots/Admin-neue-umfrage.png)
+![Admin erstellen](src/screenshots/Admin-neue-umfrage.png)
 
 
 ## Technologie
