@@ -1,10 +1,9 @@
-// Einfache Authentifizierung für Admin-Bereich
+// Authentifizierung für Admin-Bereich
 
-const ADMIN_PASSWORT = 'admin';
 const AUTH_KEY = 'admin_authenticated';
 
 function checkAuth() {
-    const isAuthenticated = localStorage.getItem(AUTH_KEY);
+    const isAuthenticated = localStorage.getItem(AUTH_KEY) || getCookie('admin_token');
     if (!isAuthenticated) {
         showLoginForm();
         return false;
@@ -12,19 +11,46 @@ function checkAuth() {
     return true;
 }
 
-function login(passwort) {
-    if (passwort === ADMIN_PASSWORT) {
-        localStorage.setItem(AUTH_KEY, 'true');
-        window.location.reload();
-        return true;
+function getCookie(name) {
+    const nameEQ = name + '=';
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i].trim();
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length);
     }
-    alert('Falsches Passwort!');
-    return false;
+    return null;
+}
+
+async function login(passwort) {
+    try {
+        const response = await fetch('../api/login.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ passwort })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            localStorage.setItem(AUTH_KEY, 'true');
+            window.location.reload();
+            return true;
+        } else {
+            alert('Falsches Passwort!');
+            return false;
+        }
+    } catch (error) {
+        alert('Fehler bei der Anmeldung: ' + error.message);
+        return false;
+    }
 }
 
 function logout() {
-    localStorage.removeItem(AUTH_KEY);
-    window.location.reload();
+    fetch('../api/login.php', { method: 'DELETE' })
+        .finally(() => {
+            localStorage.removeItem(AUTH_KEY);
+            window.location.reload();
+        });
 }
 
 function showLoginForm() {

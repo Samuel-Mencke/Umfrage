@@ -51,7 +51,6 @@ body {
     display: flex;
 }
 
-
 /* SEITENLEISTE */
 .sidebar {
     width: 300px;
@@ -537,4 +536,31 @@ input[type="time"] {
 .feld.error + .error-message,
 .feld-error-wrapper .error-message {
     display: block;
+}
+
+.umfrage-card.bereits-teilgenommen {
+    border-color: #28a745 !important;
+    background: #f0fff4 !important;
+}
+
+.umfrage-card.bereits-teilgenommen .btn-absenden {
+    background: #28a745;
+}
+
+.umfrage-card.bereits-teilgenommen .btn-absenden:hover {
+    background: #218838;
+}
+
+.umfrage-card.umfrage-beendet {
+    border-color: #6c757d !important;
+    background: #e9ecef !important;
+    opacity: 0.8;
+}
+
+.umfrage-card.umfrage-beendet .btn-absenden {
+    background: #6c757d;
+}
+
+.umfrage-card.umfrage-beendet .btn-absenden:hover {
+    background: #5a6268;
 }

@@ -27,10 +27,86 @@ const getApiBase = () => {
 
 const apiBase = getApiBase();
 
+function setCookie(name, value, days) {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+    document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+}
 
-async function ladeAlleUmfragen() {
-    const response = await fetch(apiBase + 'umfrage.php');
+function getCookie(name) {
+    const nameEQ = name + '=';
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i].trim();
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length);
+    }
+    return null;
+}
+
+function getTeilnehmerId() {
+    let id = getCookie('teilnehmer_id');
+    if (!id) {
+        id = 't_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        setCookie('teilnehmer_id', id, 365);
+        console.log('[Teilnehmer] Neue ID erstellt:', id);
+    } else {
+        console.log('[Teilnehmer] Bestehende ID:', id);
+    }
+    return id;
+}
+
+async function speichereAntworten(umfrageId, antworten) {
+    const teilnehmerId = getTeilnehmerId();
+    console.log('[Speichern] Umfrage:', umfrageId, 'Teilnehmer:', teilnehmerId);
+    console.log('[Speichern] Antworten:', antworten);
+    
+    const response = await fetch(apiBase + 'antworten.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ umfrageId, antworten, teilnehmer_id: teilnehmerId })
+    });
+    
+    if (!response.ok) {
+        const error = await response.json();
+        console.error('[Speichern] Fehler:', error);
+        throw new Error(error.error || 'Speichern fehlgeschlagen');
+    }
+    
+    const result = await response.json();
+    console.log('[Speichern] Erfolgreich:', result);
+    return result;
+}
+
+async function ladeAntwortenPerUmfrageId(umfrageId) {
+    const teilnehmerId = getTeilnehmerId();
+    const response = await fetch(`${apiBase}antworten.php?umfrage_id=${umfrageId}&teilnehmer_id=${teilnehmerId}`);
+    if (!response.ok) {
+        console.error('API Fehler:', response.status);
+        return [];
+    }
     return await response.json();
+}
+
+async function pruefeObTeilnahmen(umfrageId) {
+    const teilnehmerId = getTeilnehmerId();
+    const response = await fetch(`${apiBase}antworten.php?umfrage_id=${umfrageId}&pruefen=1&teilnehmer_id=${teilnehmerId}`);
+    if (!response.ok) {
+        return { hatTeilgenommen: false, antwortId: null };
+    }
+    const data = await response.json();
+    if (!data || typeof data !== 'object') {
+        return { hatTeilgenommen: false, antwortId: null };
+    }
+    return data;
+}
+
+async function loescheAntwort(umfrageId) {
+    const teilnehmerId = getTeilnehmerId();
+    await fetch(apiBase + 'antworten.php?loeschen=1', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ umfrageId, teilnehmer_id: teilnehmerId })
+    });
 }
 
 async function speichereUmfrage(umfrage) {
@@ -45,6 +121,14 @@ async function speichereUmfrage(umfrage) {
 
 async function ladeUmfragePerId(id) {
     const response = await fetch(`${apiBase}umfrage.php?id=${id}`);
+    return await response.json();
+}
+
+async function ladeAlleUmfragen() {
+    const response = await fetch(`${apiBase}umfrage.php`);
+    if (!response.ok) {
+        throw new Error('Fehler beim Laden der Umfragen');
+    }
     return await response.json();
 }
 
@@ -68,36 +152,35 @@ async function aktiviereUmfrage(id) {
     });
 }
 
-async function speichereAntworten(umfrageId, antworten) {
-    await fetch(apiBase + 'antworten.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ umfrageId, antworten })
-    });
-}
 
-async function ladeAntwortenPerUmfrageId(umfrageId) {
-    const response = await fetch(`${apiBase}antworten.php?umfrage_id=${umfrageId}`);
+
+async function ladeAlleAntwortenFuerAuswertung(umfrageId) {
+    const response = await fetch(`${apiBase}antworten.php?umfrage_id=${umfrageId}&auswertung=1`);
     return await response.json();
 }
 
 async function erzeugeAuswertung(umfrageId) {
     const umfrage = await ladeUmfragePerId(umfrageId);
-    const antworten = await ladeAntwortenPerUmfrageId(umfrageId);
+    const antworten = await ladeAlleAntwortenFuerAuswertung(umfrageId);
 
-    // Alle eindeutigen IPs sammeln
-    const uniqueIPs = new Set(antworten.map(a => a.ip));
-    const teilnehmerMitIP = antworten.filter((a, index) => {
-        const ip = a.ip;
-        const firstIndex = antworten.findIndex(x => x.ip === ip);
-        return firstIndex === index;
+    if (!Array.isArray(antworten)) {
+        console.error('Antworten sind kein Array:', antworten);
+    }
+
+    const uniqueTeilnehmer = new Set(antworten.map(a => a.teilnehmer_id).filter(Boolean));
+    const tidSeen = new Set();
+    const teilnehmerUnique = antworten.filter(a => {
+        if (!a.teilnehmer_id) return false;
+        if (tidSeen.has(a.teilnehmer_id)) return false;
+        tidSeen.add(a.teilnehmer_id);
+        return true;
     });
 
     const auswertung = {
         titel: umfrage.titel,
         beschreibung: umfrage.beschreibung,
         beendetAm: umfrage.beendetAm,
-        gesamtTeilnehmer: uniqueIPs.size,
+        gesamtTeilnehmer: uniqueTeilnehmer.size,
         fragen: []
     };
 
@@ -110,14 +193,16 @@ async function erzeugeAuswertung(umfrageId) {
             gesamtAntworten: 0
         };
 
-        // Antworten zählen (jede IP nur einmal pro Frage)
-        const ipSet = new Set();
+        const tidSet = new Set();
 
-        teilnehmerMitIP.forEach(antwort => {
-            const ip = antwort.ip;
-            if (ipSet.has(ip)) return;
+        antworten.forEach(antwort => {
+            const tid = antwort.teilnehmer_id;
+            if (!tid || tidSet.has(tid)) return;
 
             const frageAntwort = antwort.antworten[frageIndex];
+            if (frageAntwort === undefined || frageAntwort === null) return;
+
+            tidSet.add(tid);
 
             if (frage.typ === 'radio' || frage.typ === 'checkbox') {
                 if (Array.isArray(frageAntwort)) {
@@ -140,13 +225,11 @@ async function erzeugeAuswertung(umfrageId) {
                 }
                 frageAuswertung.antworten[num]++;
             } else {
-                // Text, Number, Date, Email
                 if (frageAntwort) {
                     frageAuswertung.textAntworten.push(frageAntwort);
                 }
             }
 
-            ipSet.add(ip);
             frageAuswertung.gesamtAntworten++;
         });
 
@@ -156,10 +239,7 @@ async function erzeugeAuswertung(umfrageId) {
     return auswertung;
 }
 
-
-
 // HTML-RENDER FUNKTIONEN (User-Bereich)
-
 
 // Render eine Umfrage für User zum Ausfüllen
 async function rendereUmfrageFuerUser(umfrageId) {
@@ -171,17 +251,97 @@ async function rendereUmfrageFuerUser(umfrageId) {
         return;
     }
 
-    if (umfrage.status === 'beendet') {
-        container.innerHTML = `
+    let alleAntworten = await ladeAntwortenPerUmfrageId(umfrageId);
+    if (!Array.isArray(alleAntworten)) {
+        console.error('API Fehler beim Laden der Antworten:', alleAntworten);
+        alleAntworten = [];
+    }
+    const teilnehmerId = getTeilnehmerId();
+    const eigeneAntwort = alleAntworten.find(a => a.teilnehmer_id === teilnehmerId);
+    let alteAntworten = null;
+    let hatBereitsTeilgenommen = false;
+
+    if (eigeneAntwort) {
+        hatBereitsTeilgenommen = true;
+        let parsedAnswers = eigeneAntwort.antworten;
+        if (typeof parsedAnswers === 'string' && parsedAnswers.startsWith('[')) {
+            try {
+                parsedAnswers = JSON.parse(parsedAnswers);
+            } catch (e) {
+                console.warn('[Umfrage] Konnte Antworten nicht parsen:', parsedAnswers);
+            }
+        }
+        alteAntworten = parsedAnswers;
+    }
+
+    if (hatBereitsTeilgenommen && alteAntworten) {
+        let html = `
             <div class="card">
                 <h2 class="titel_umfrage">${entferneHtml(umfrage.titel)}</h2>
                 <p class="sidebar-text" style="margin-bottom: 20px;">${entferneHtml(umfrage.beschreibung || '')}</p>
-                <div style="background: #fff3cd; color: #856404; padding: 16px; border-radius: 8px; border: 1px solid #ffeeba; margin: 20px 0;">
-                    <p style="margin: 0;">Diese Umfrage wurde beendet und kann nicht mehr ausgefüllt werden.</p>
-                </div>
-                <a href="../index.php" class="btn-zurueck" style="display: inline-block; text-decoration: none;">Zurück zur Startseite</a>
+                <div style="background: #e9ecef; color: #495057; padding: 16px; border-radius: 8px; border: 1px solid #ced4da; margin: 20px 0;">
+                    <p style="margin: 0;">${umfrage.status === 'beendet' ? 'Diese Umfrage wurde beendet.' : ''} Deine Antworten kannst du nur noch ansehen.</p>
+                </div>`;
+
+        umfrage.fragen.forEach((frage, index) => {
+            const alteAntwort = alteAntworten[index];
+            html += `<div class="preview-frage">`;
+            html += `<p class="preview-frage-text">${index + 1}. ${entferneHtml(frage.frage)}</p>`;
+
+            if (frage.typ === 'radio' || frage.typ === 'checkbox') {
+                if (frage.antworten && frage.antworten.length > 0) {
+                    frage.antworten.forEach((antwort) => {
+                        let isChecked = '';
+                        let labelStyle = 'padding: 8px 12px; border-radius: 6px; margin: 4px 0; display: block; background: #f8f9fa; border: 1px solid #dee2e6;';
+                        if (alteAntwort) {
+                            if (frage.typ === 'radio' && alteAntwort === antwort) {
+                                isChecked = ' checked disabled';
+                                labelStyle = 'padding: 8px 12px; border-radius: 6px; margin: 4px 0; display: block; background: #d4edda; border: 2px solid #28a745; font-weight: 600;';
+                            } else if (frage.typ === 'checkbox' && Array.isArray(alteAntwort) && alteAntwort.includes(antwort)) {
+                                isChecked = ' checked disabled';
+                                labelStyle = 'padding: 8px 12px; border-radius: 6px; margin: 4px 0; display: block; background: #d4edda; border: 2px solid #28a745; font-weight: 600;';
+                            }
+                        }
+                        html += `<label class="preview-option" style="${labelStyle}">`;
+                        html += `<input type="${frage.typ}" name="frage_${index}" value="${entferneHtml(antwort)}"${isChecked} style="margin-right: 10px;">`;
+                        html += `${entferneHtml(antwort)}`;
+                        html += `</label>`;
+                    });
+                }
+            }
+            else if (frage.typ === 'text' || frage.typ === 'number' || frage.typ === 'date' || frage.typ === 'email') {
+                const alterWert = alteAntwort || 'Keine Antwort';
+                html += `<input class="feld" type="${frage.typ}" value="${entferneHtml(alterWert)}" readonly style="background: var(--grau-hell);">`;
+            }
+            else if (frage.typ === 'range') {
+                const alterWert = alteAntwort || 3;
+                html += `<input class="feld-range" type="range" min="1" max="5" value="${alterWert}" disabled style="opacity: 1;">`;
+                html += `<p class="sidebar-text" style="margin-top: 8px;">Bewertung: ${alterWert}/5</p>`;
+            }
+
+            html += `</div>`;
+        });
+
+        html += `
+                <a href="/umfrage/index.php" class="btn-zurueck" style="display: inline-block; text-decoration: none; margin-top: 20px;">Zurück zur Startseite</a>
             </div>
         `;
+        container.innerHTML = html;
+        return;
+    }
+
+    if (umfrage.status === 'beendet') {
+        let html = `
+            <div class="card">
+                <h2 class="titel_umfrage">${entferneHtml(umfrage.titel)}</h2>
+                <p class="sidebar-text" style="margin-bottom: 20px;">${entferneHtml(umfrage.beschreibung || '')}</p>
+                <div style="background: #f8d7da; color: #721c24; padding: 16px; border-radius: 8px; border: 1px solid #f5c6cb; margin: 20px 0;">
+                    <p style="margin: 0;">Diese Umfrage wurde beendet und kann nicht mehr ausgefüllt werden.</p>
+                </div>
+                <a href="/umfrage/index.php" class="btn-zurueck" style="display: inline-block; text-decoration: none;">Zurück zur Startseite</a>
+            </div>
+        `;
+        container.innerHTML = html;
         return;
     }
 
@@ -197,63 +357,110 @@ async function rendereUmfrageFuerUser(umfrageId) {
         html += `<div class="preview-frage">`;
         html += `<p class="preview-frage-text">${index + 1}. ${entferneHtml(frage.frage)}</p>`;
 
-        // Radio oder Checkbox - Antwortmöglichkeiten anzeigen
+        const alteAntwort = alteAntworten ? alteAntworten[index] : null;
+
         if (frage.typ === 'radio' || frage.typ === 'checkbox') {
             if (frage.antworten && frage.antworten.length > 0) {
-                frage.antworten.forEach((antwort, antwortIndex) => {
+                frage.antworten.forEach((antwort) => {
+                    let isChecked = '';
+                    if (alteAntwort) {
+                        if (frage.typ === 'radio' && alteAntwort === antwort) {
+                            isChecked = ' checked';
+                        } else if (frage.typ === 'checkbox' && Array.isArray(alteAntwort) && alteAntwort.includes(antwort)) {
+                            isChecked = ' checked';
+                        }
+                    }
                     html += `<label class="preview-option">`;
-                    html += `<input type="${frage.typ}" name="frage_${index}" value="${entferneHtml(antwort)}">`;
+                    html += `<input type="${frage.typ}" name="frage_${index}" value="${entferneHtml(antwort)}"${isChecked}>`;
                     html += `${entferneHtml(antwort)}`;
                     html += `</label>`;
                 });
             }
         }
-        // Text/Number/Date/Email - Eingabefeld anzeigen
         else if (frage.typ === 'text' || frage.typ === 'number' || frage.typ === 'date' || frage.typ === 'email') {
             const placeholder = frage.typ === 'text' ? 'Deine Antwort...' :
                 frage.typ === 'number' ? 'Zahl...' :
                     frage.typ === 'email' ? 'E-Mail...' : '';
-            html += `<input class="feld" type="${frage.typ}" name="frage_${index}" placeholder="${placeholder}">`;
+            const alterWert = alteAntwort || '';
+            html += `<input class="feld" type="${frage.typ}" name="frage_${index}" placeholder="${placeholder}" value="${entferneHtml(alterWert)}">`;
         }
-        // Range - Slider anzeigen
         else if (frage.typ === 'range') {
+            const alterWert = alteAntwort || 3;
             html += `<label class="preview-option" style="flex-direction: column; align-items: flex-start; gap: 5px;">`;
-            html += `<input class="feld-range" type="range" min="1" max="5" value="3" name="frage_${index}" style="width: 100%;">`;
+            html += `<input class="feld-range" type="range" min="1" max="5" value="${alterWert}" name="frage_${index}" style="width: 100%;">`;
             html += `</label>`;
         }
 
         html += `</div>`;
     });
 
+    const buttonText = hatBereitsTeilgenommen ? 'Antwort aktualisieren' : 'Absenden';
     html += `
         <div class="button-zeile" style="margin-top: 20px;">
-            <button type="submit" class="btn-absenden">Absenden</button>
+            <button type="submit" class="btn-absenden">${buttonText}</button>
         </div>
     </form>
     `;
 
     container.innerHTML = html;
 
-    // Form-Submit Event
     const form = document.getElementById('umfrage-form');
+    
+    form.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const unfilledFields = [];
+            umfrage.fragen.forEach((frage, index) => {
+                if (frage.typ === 'radio') {
+                    const checked = form.querySelector(`input[name="frage_${index}"]:checked`);
+                    if (!checked) unfilledFields.push(index + 1);
+                } else if (frage.typ === 'checkbox') {
+                    const checked = form.querySelectorAll(`input[name="frage_${index}"]:checked`);
+                    if (checked.length === 0) unfilledFields.push(index + 1);
+                } else {
+                    const value = formData.get(`frage_${index}`);
+                    if (!value || !value.trim()) unfilledFields.push(index + 1);
+                }
+            });
+            if (unfilledFields.length > 0) {
+                alert('Bitte fülle alle Fragen aus! Unbeantwortet: ' + unfilledFields.join(', '));
+            }
+        }
+    });
+    
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const antworten = {};
-        const formData = new FormData(form);
-
-        umfrage.fragen.forEach((frage, index) => {
-            if (frage.typ === 'radio') {
-                antworten[index] = formData.get(`frage_${index}`);
-            } else if (frage.typ === 'checkbox') {
-                antworten[index] = formData.getAll(`frage_${index}`);
-            } else {
-                antworten[index] = formData.get(`frage_${index}`);
+        try {
+            if (hatBereitsTeilgenommen) {
+                console.log('[Form] Vorhandene Antwort löschen...');
+                await loescheAntwort(umfrageId);
             }
-        });
 
-        await speichereAntworten(umfrageId, antworten);
-        window.location.href = 'danke.html';
+            const antworten = {};
+            const formData = new FormData(form);
+
+            umfrage.fragen.forEach((frage, index) => {
+                if (frage.typ === 'radio') {
+                    antworten[index] = formData.get(`frage_${index}`);
+                } else if (frage.typ === 'checkbox') {
+                    antworten[index] = formData.getAll(`frage_${index}`);
+                } else {
+                    antworten[index] = formData.get(`frage_${index}`);
+                }
+            });
+
+            const result = await speichereAntworten(umfrageId, antworten);
+            if (result && result.success) {
+                window.location.href = '/umfrage/public/danke.html';
+            } else {
+                throw new Error(result?.error || 'Unbekannter Fehler beim Speichern');
+            }
+        } catch (e) {
+            console.error('[Form] Speicherfehler:', e);
+            alert('Fehler beim Speichern: ' + e.message);
+        }
     });
 }
 
@@ -264,14 +471,14 @@ function rendereDankeSeite() {
         <div class="card" style="text-align: center; max-width: 400px;">
             <h2 class="titel_umfrage">Danke!</h2>
             <p class="sidebar-text" style="margin-bottom: 20px;">Deine Antworten wurden gespeichert.</p>
-            <a href="../index.php" class="btn-zurueck" style="display: inline-block; text-decoration: none;">Zurück zur Startseite</a>
+            <a href="/umfrage/index.php" class="btn-zurueck" style="display: inline-block; text-decoration: none;">Zurück zur Startseite</a>
         </div>
     `;
 }
 
 
 
-// ADMIN-RENDER FUNKTIONEN
+// ADMIN-RENDER FUNKTION
 
 
 async function rendereUmfragenListe() {
@@ -286,7 +493,7 @@ async function rendereUmfragenListe() {
             <h2 class="titel_umfrage">Aktuelle Umfragen</h2>
             <hr>
             <p class="sidebar-text">Noch keine Umfragen erstellt.</p>
-            <a href="create.html" class="btn-absenden" style="display: inline-block; text-decoration: none; margin-top: 12px;">Erste Umfrage erstellen</a>
+            <a href="/umfrage/admin/create.html" class="btn-absenden" style="display: inline-block; text-decoration: none; margin-top: 12px;">Erste Umfrage erstellen</a>
         `;
         return;
     }
@@ -306,7 +513,7 @@ async function rendereUmfragenListe() {
                 <p class="sidebar-text" style="margin-bottom: 12px; font-size: 12px;">${umfrage.fragen.length} Fragen • ${statusHtml}</p>
 
                 <div class="button-zeile" style="margin-bottom: 12px;">
-                    <a href="../public/survey.html?id=${umfrage.id}" class="btn-zurueck" style="display: inline-block; text-decoration: none;">Teilen</a>
+                    <a href="/umfrage/public/survey.html?id=${umfrage.id}" class="btn-zurueck" style="display: inline-block; text-decoration: none;">Teilen</a>
                     <button class="btn-auswertung" data-id="${umfrage.id}" style="padding: 12px 28px; border-radius: 99px; border: 1.5px solid var(--blau); background: var(--weiss); color: var(--blau); font-family: alan-sans, sans-serif; font-size: 15px; cursor: pointer;">Auswertung</button>
                 </div>
 
@@ -435,34 +642,58 @@ async function zeigeAuswertung(umfrageId) {
 }
 
 async function rendereUmfragenAufStartseite() {
-    const umfragen = await ladeAlleUmfragen();
     const container = document.getElementById('startseite-umfragen');
-
     if (!container) return;
 
-    // Keine Umfragen vorhanden?
+    let umfragen;
+    try {
+        umfragen = await ladeAlleUmfragen();
+    } catch (e) {
+        console.error('Fehler beim Laden der Umfragen:', e);
+        container.innerHTML = '<p class="sidebar-text">Fehler beim Laden der Umfragen.</p>';
+        return;
+    }
+
     if (umfragen.length === 0) {
         container.innerHTML = '<p class="sidebar-text">Noch keine Umfragen erstellt.</p>';
         return;
     }
 
     let html = '';
-    umfragen.forEach((umfrage) => {
+    for (const umfrage of umfragen) {
+        let hatTeilnahmen = false;
+        try {
+            const bereitsTeilgenommen = await pruefeObTeilnahmen(umfrage.id);
+            hatTeilgenommen = bereitsTeilgenommen && bereitsTeilgenommen.hatTeilgenommen;
+        } catch (e) {
+            console.error('Fehler beim Prüfen der Teilnahme:', e);
+        }
+        const isBeendet = umfrage.status === 'beendet';
+
+        let statusClass = 'umfrage-beendet';
+        let buttonText = 'Jetzt teilnehmen';
+
+        if (hatTeilgenommen) {
+            buttonText = 'Antwort ansehen';
+        }
+
         html += `
-            <div style="padding: 20px; border-radius: 12px; border:1.5px solid var(--rand); background: var(--grau-hell); margin-bottom: 16px;">
+            <div class="umfrage-card ${statusClass}" style="padding: 20px; border-radius: 12px; border:1.5px solid var(--rand); background: var(--grau-hell); margin-bottom: 16px;">
                 <h4 class="sidebar-titel" style="font-size: 16px; margin-bottom: 4px;">${entferneHtml(umfrage.titel)}</h4>
                 <p class="sidebar-text" style="margin-bottom: 12px;">${entferneHtml(umfrage.beschreibung || '')}</p>
-                <p class="sidebar-text" style="margin-bottom: 12px; font-size: 12px;">${umfrage.fragen.length} Fragen</p>
-                <a href="public/survey.html?id=${umfrage.id}" class="btn-absenden" style="display: inline-block; text-decoration: none;">Jetzt teilnehmen</a>
+                <p class="sidebar-text" style="margin-bottom: 12px; font-size: 12px;">${umfrage.fragen.length} Fragen ${isBeendet ? '• <span style="color: #dc3545;">Beendet</span>' : ''}</p>
+                ${hatTeilgenommen ? '<p class="sidebar-text" style="margin-bottom: 12px; font-size: 12px; color: #28a745;">✓ Bereits beantwortet</p>' : ''}
+                ${isBeendet ? '<p class="sidebar-text" style="margin-bottom: 12px; font-size: 12px; color: #dc3545;">Umfrage beendet</p>' : ''}
+                <a href="/umfrage/public/survey.html?id=${umfrage.id}" class="btn-absenden" style="display: inline-block; text-decoration: none;">${buttonText}</a>
             </div>
         `;
-    });
+    }
 
     container.innerHTML = html;
 }
 
 
-// DOM-MANIPULATION FRAGEN & ANTWORTEN
+// FRAGEN & ANTWORTEN
 
 
 // Neue Frage hinzufügen
@@ -1103,8 +1334,11 @@ function clearError(element) {
 
 
 // Startet wenn die Seite geladen ist
+let pageInitialized = false;
 document.addEventListener('DOMContentLoaded', () => {
-    // Prüfen auf welcher Seite wir sind
+    if (pageInitialized) return;
+    pageInitialized = true;
+
     const currentPage = window.location.pathname.split('/').pop();
 
     // Admin-Bereich: Umfragen-Liste rendern
@@ -1265,7 +1499,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (id) {
                     alert('Umfrage erfolgreich gespeichert!');
-                    window.location.href = '../index.php';
+                    window.location.href = '/umfrage/index.php';
                 } else {
                     alert('Fehler beim Speichern der Umfrage!');
                     submitBtn.value = originalValue;
