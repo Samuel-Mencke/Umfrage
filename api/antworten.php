@@ -64,15 +64,7 @@ function ladeAntworten($pdo) {
     }
 
     if ($auswertung) {
-        global $admin_password;
-        $token = $_COOKIE['admin_token'] ?? '';
-        $expected = hash('sha256', $admin_password . 'umfrage_admin_salt');
-        
-        if (!hash_equals($expected, $token)) {
-            http_response_code(401);
-            echo json_encode(['error' => 'Nicht autorisiert']);
-            return;
-        }
+        requireAdmin();
         
         $stmt = $pdo->prepare('SELECT id, antworten, zeitstempel, teilnehmer_id FROM teilnehmer_antworten WHERE umfrage_id = ? ORDER BY zeitstempel ASC');
         $stmt->execute([$_GET['umfrage_id']]);

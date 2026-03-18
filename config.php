@@ -1,9 +1,8 @@
 <?php
 $host = 'localhost';
-$dbname = 'umfrage_db';
-$username = 'your_username';
-$password = 'your_password';
-$admin_password = 'admin';
+$dbname = 'web50_db1';
+$username = 'web50_1';
+$password = '-.1X:mQT_8ZKyrLv';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password, [

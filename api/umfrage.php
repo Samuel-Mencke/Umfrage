@@ -2,26 +2,9 @@
 header('Content-Type: application/json');
 
 require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/middleware/admin_auth.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
-
-function requireAdmin() {
-    global $admin_password;
-    $token = $_COOKIE['admin_token'] ?? '';
-    
-    if (empty($token)) {
-        http_response_code(401);
-        echo json_encode(['error' => 'Nicht autorisiert']);
-        exit;
-    }
-    
-    $expected = hash('sha256', $admin_password . 'umfrage_admin_salt');
-    if (!hash_equals($expected, $token)) {
-        http_response_code(401);
-        echo json_encode(['error' => 'Nicht autorisiert']);
-        exit;
-    }
-}
 
 try {
     switch ($method) {

@@ -1,31 +1,90 @@
 
+// =============================================
+// UMFRAGE-APPLICATION - JAVASCRIPT LOGIK
+// Datei: script.js
+// Beschriftung: Enthält alle clientseitigen Logiken für:
+// - Umfrage-Erstellung (Admin-Bereich)
+// - Umfrage-Ausfüllung (User-Bereich)
+// - Umfrage-Auswertung (Admin-Bereich)
+// - Kommunikation mit der PHP-Backend-API
+// =============================================
+
 // KONSTANTEN & VARIABLEN
+// Zentrale Konfigurationen und Zustandsvariablen für die Anwendung
 
-
-// Alle Fragetypen als Array
+// Alle verfügbaren Fragetypen mit ihren IDs und Anzeigetexten
 const fragetypen = [
-    { id: 'radio', label: 'Nur eine Antwort' },
-    { id: 'checkbox', label: 'Mehrere Antworten' },
-    { id: 'text', label: 'Texteingabe' },
-    { id: 'number', label: 'Zahl' },
-    { id: 'date', label: 'Datum' },
-    { id: 'email', label: 'E-Mail' },
-    { id: 'range', label: 'Bewertung (1-5)' }
+    { id: 'radio', label: 'Nur eine Antwort' },           // Einfachauswahl
+    { id: 'checkbox', label: 'Mehrere Antworten' },       // Mehrfachauswahl
+    { id: 'text', label: 'Texteingabe' },                 // Freitextfeld
+    { id: 'number', label: 'Zahl' },                      // Numerische Eingabe
+    { id: 'date', label: 'Datum' },                       // Datumswähler
+    { id: 'email', label: 'E-Mail' },                     // E-Mail-Feld mit Validierung
+    { id: 'range', label: 'Bewertung (1-5)' }             // Skala von 1 bis 5
 ];
 
-// Zähler für die Fragen - startet mit 2 weil schon 2 Fragen da sind
+// Zähler für die Fragen - startet mit 2 weil das Formular bereits 2 Standardfragen enthält
 let fragenCount = 2;
 
 
-
+/**
+ * Ermittelt den Basis-URL für API-Anfragen abhängig vom aktuellen Pfad
+ * @returns {string} Der Basis-Pfad für API-Endpunkte
+ */
 const getApiBase = () => {
     const path = window.location.pathname;
-    if (path.includes('/admin/')) return '../api/';
-    if (path.includes('/public/')) return '../api/';
-    return 'api/';
+    if (path.includes('/admin/')) return '../api/';   // Admin-Bereich
+    if (path.includes('/public/')) return '../api/';  // Public-Bereich
+    return 'api/';                                    // Standardfall (User-Bereich)
 };
 
+// Speichert den ermittelten API-Basis-Pfad für alle nachfolgenden Anfragen
 const apiBase = getApiBase();
+
+/**
+ * Setzt ein Cookie mit angegebenem Namen, Wert und Gültigkeitsdauer
+ * @param {string} name - Name des Cookies
+ * @param {string} value - Wert des Cookies
+ * @param {number} days - Anzahl der Tage bis zum Ablauf (Standard: 1)
+ */
+function setCookie(name, value, days) {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+    document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+}
+
+/**
+ * Liest den Wert eines Cookies anhand seines Namens
+ * @param {string} name - Name des zu lesenden Cookies
+ * @returns {string|null} Der Cookie-Wert oder null wenn das Cookie nicht existiert
+ */
+function getCookie(name) {
+    const nameEQ = name + '=';
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i].trim();
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length);
+    }
+    return null;
+}
+
+/**
+ * Erstellt oder holt eine eindeutige Teilnehmer-ID für die aktuelle Umfrage-Teilnahme
+ * Speichert die ID in einem Cookie für ein Jahr, um Wiederholungsteilnahmen zu verhindern
+ * @returns {string} Die eindeutige Teilnehmer-ID
+ */
+function getTeilnehmerId() {
+    let id = getCookie('teilnehmer_id');
+    if (!id) {
+        // Generiere eine neue ID basierend auf Timestamp und Zufallszahl
+        id = 't_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        setCookie('teilnehmer_id', id, 365); // Cookie für 1 Jahr gültig
+        console.log('[Teilnehmer] Neue ID erstellt:', id);
+    } else {
+        console.log('[Teilnehmer] Bestehende ID:', id);
+    }
+    return id;
+}
 
 function setCookie(name, value, days) {
     const expires = new Date();
